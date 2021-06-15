@@ -54,9 +54,9 @@ protected:
 class img: public texture {
 public:
   img(SDL_Renderer *renderer,
-      const std::string filename);
+      const char filename[]);
   ~img();
-  bool loadfile(const std::string filename);
+  bool loadfile(const char filename[]);
 };
 
 class ttftext: public texture {
@@ -78,45 +78,46 @@ protected:
 
 struct anirow {
 public:
-  anirow(int w, int h, int f);
-  int width;
-  int height;
-  int frames;
+  anirow(uint16_t xpos, uint16_t ypos, uint16_t w, uint16_t h, uint8_t f);
+  anirow();
+  uint16_t x;
+  uint16_t y;
+  uint16_t width;
+  uint16_t height;
+  uint8_t  frames;
 };
 
 class spritesheet: public img {
 public:
   spritesheet(SDL_Renderer *renderer,
-		 const std::string filename,
-		 std::vector<struct anirow *> *data);
-  int cframe();
-  void setframe(int newframe);
-  int advanceframe();
-  int cset();
-  void setset(int newset);
+	      const char filename[],
+	      struct anirow *data,
+	      uint8_t size);
+  spritesheet(SDL_Renderer *renderer,
+	      const char filename[],
+	      const char datafile[]);
+  spritesheet(SDL_Renderer *renderer,
+	      const char filename[]);
   // bool animated();
   // void setanimated(bool swtch);
-  std::vector<struct anirow *> *data();
-  void setdata(std::vector<struct anirow *> *newdata);
-  anirow *currentdata();
+  struct anirow *data();
+  void setdata(struct anirow *newdata, uint8_t datalength);
+  int loaddatafile(const char filename[]);
+  uint8_t getlength();
   // int getspeed();
   // void setspeed(int newspeed);
-  void renderframe(int x, int y, double angle = 0.0,  SDL_Point *center = NULL,
+  void rendersprite(uint8_t sprite, uint8_t frame, SDL_Rect *dest,
+		    double angle = 0.0,  SDL_Point *center = NULL,
 		   SDL_RendererFlip flip = SDL_FLIP_NONE);
-  void renderframe(SDL_Rect *dest, double angle = 0.0,  SDL_Point *center = NULL,
-		   SDL_RendererFlip flip = SDL_FLIP_NONE);
-  void renderframe(int row, int col, SDL_Rect *dest, double angle = 0.0,  SDL_Point *center = NULL,
-		   SDL_RendererFlip flip = SDL_FLIP_NONE);
-  void renderframe(int row, int col, int x, int y, double angle = 0.0,  SDL_Point *center = NULL,
+  void rendersprite(uint8_t sprite, uint8_t frame, int x, int y,
+		    double angle = 0.0,  SDL_Point *center = NULL,
 		   SDL_RendererFlip flip = SDL_FLIP_NONE);
   ~spritesheet();
 protected:
   // spritesheet(SDL_Renderer *renderer,
   // 	      const std::string filename);
-  std::vector<struct anirow *> *framedata;
-  int frame = 0;
-  int set = 0;
-  struct anirow *setstruct = NULL;
+  struct anirow *framedata;
+  uint8_t length;
   // bool playing = true;
   // int speed = 1;
   // int iter = 0;
@@ -144,8 +145,9 @@ protected:
 class font: public spritesheet {
 public:
   font(SDL_Renderer *renderer,
-       const std::string filename,
-       std::vector<struct anirow *> *data);
+       const char filename[],
+       struct anirow *data,
+       uint8_t size);
   void renderchar(SDL_Rect *dest, char cchar, double angle = 0.0, SDL_Point *center = NULL,
 		  SDL_RendererFlip flip = SDL_FLIP_NONE);
   void renderchar(int x, int y, char cchar, double angle = 0.0, SDL_Point *center = NULL,

@@ -1,4 +1,4 @@
--std=c++14
+-std=gnu++20
 -fdiagnostics-color=always
 -Iincludes
 -g

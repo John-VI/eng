@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <fstream>
+#include <limits>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
@@ -175,16 +177,16 @@ SDL_Renderer *newren( SDL_Window *win,  Uint8 r,  Uint8 g,
 /* ========= Img      ========= */
 
 img::img(SDL_Renderer *renderer,
-	 const std::string filename) : texture(renderer) {
+	 const char filename[]) : texture(renderer) {
   setrenderer(renderer);
   loadfile(filename);
   resetwh();
 }
 
-bool img::loadfile(const std::string filename) {
+bool img::loadfile(const char filename[]) {
   if (sdltexture)
     SDL_DestroyTexture(sdltexture);
-  sdltexture = loadtex(ren, filename.c_str());
+  sdltexture = loadtex(ren, filename);
   return (sdltexture != NULL);
 }
 
@@ -236,180 +238,118 @@ ttftext::~ttftext() {}
 
 /* ========= spritesheet ========== */
 
-anirow::anirow(int w, int h, int f) {
+anirow::anirow(uint16_t xpos, uint16_t ypos, uint16_t w, uint16_t h, uint8_t f) {
+  x = xpos;
+  y = ypos;
   width = w;
   height = h;
   frames = f;
 }
 
+anirow::anirow() {}
+
 spritesheet::spritesheet(SDL_Renderer *renderer,
-			      const std::string filename,
-			      std::vector<struct anirow *> *data) : img(renderer, filename) {
-  setdata(data);
+			 const char filename[],
+			 struct anirow *data, uint8_t size) : img(renderer, filename) {
+  setdata(data, size);
   // setwidth(animationdata->at(frame)->width);
   // setheight((animationdata->at(frame)->height));
 }
 
-int spritesheet::cframe() {
-  return frame;
+spritesheet::spritesheet(SDL_Renderer *renderer,
+			 const char filename[],
+			 const char datafile[]) : img(renderer, filename) {
+  loaddatafile(datafile);
 }
 
-void spritesheet::setframe(int newframe) {
-  frame = newframe;
+spritesheet::spritesheet(SDL_Renderer *renderer,
+			 const char filename[]) : img(renderer, filename) {}
+
+int spritesheet::loaddatafile(const char filename[]) {
+  std::ifstream F = std::ifstream(filename, std::ios::in | std::ios::binary);
+  char buffer[2];
+  struct anirow *newdata = NULL;
+  char cells = 0;
+  unsigned int length = 0;
+
+  F.read(buffer, 1);
+  cells = buffer[0];
+  F.ignore(std::numeric_limits<std::streamsize>::max());
+  length = F.gcount() - 1;
+  F.clear();
+  F.seekg(1, std::ios_base::beg);
+  englogger->debug("Length: {}, cells: {}", length, cells);
+  
+  if (cells * 9 >= length) {
+    newdata = new struct anirow[buffer[0]];
+    for (int i = 0; i < cells; i++) {
+      F.read(buffer, 2);
+      newdata[i].x = *buffer;
+      F.read(buffer, 2);
+      newdata[i].y = *buffer;
+      F.read(buffer, 2);
+      newdata[i].width = *buffer;
+      F.read(buffer, 2);
+      newdata[i].height = *buffer;
+      F.read(buffer, 1);
+      newdata[i].frames = buffer[0];
+    }
+    F.close();
+    setdata(newdata, cells);
+    return F.gcount();
+  } else {
+    setdata(NULL, 0);
+    F.close();
+    return -1;
+  }
 }
 
-int spritesheet::advanceframe() {
-  if (cframe() == currentdata()->frames - 1)
-    setframe(0);
-  else
-    setframe(cframe() + 1);
-  return cframe();
-}
+// animationsheet::animationsheet(SDL_Renderer *renderer,
+// 	      const std::string filename,
+// 			       std::vector<struct anirow *> *data) :
+//   spritesheet(renderer, filename, data) {}
 
-int spritesheet::cset() {
-  return set;
-}
+// bool animationsheet::animated() {
+//   return playing;
+// }
 
-void spritesheet::setset(int newset) {
-  set = newset;
-  setstruct = framedata->at(set);
-  //setwh(animationdata->at(animationset())->width, animationdata->at(animationset())->height);
-  setframe(0);
-}
+// void animationsheet::setanimated(bool swtch) {
+//   playing = swtch;
+// }
 
-animationsheet::animationsheet(SDL_Renderer *renderer,
-	      const std::string filename,
-			       std::vector<struct anirow *> *data) :
-  spritesheet(renderer, filename, data) {}
-
-bool animationsheet::animated() {
-  return playing;
-}
-
-void animationsheet::setanimated(bool swtch) {
-  playing = swtch;
-}
-
-std::vector<struct anirow *> *spritesheet::data() {
+struct anirow *spritesheet::data() {
   return framedata;
 }
 
-void spritesheet::setdata(std::vector<struct anirow *> *newdata) {
+void spritesheet::setdata(struct anirow *newdata, uint8_t datalength) {
   framedata = newdata;
-  setset(0);
+  length = datalength;
   //setframe(0);
 }
 
-anirow *spritesheet::currentdata() {
-  return setstruct;
-}
+// int animationsheet::getspeed() {
+//   return speed;
+// }
 
-int animationsheet::getspeed() {
-  return speed;
-}
+// void animationsheet::setspeed(int newspeed) {
+//   speed = newspeed;
+// }
 
-void animationsheet::setspeed(int newspeed) {
-  speed = newspeed;
-}
-
-void animationsheet::renderframe(int x, int y,
-				 double angle, SDL_Point *center, SDL_RendererFlip flip) {
-    int i = 0;
-    int offset = 0;
-    if (cset())
-      for (i = 0; i < cset(); i++)
-	offset += data()->at(i)->height;
-    SDL_Rect sourcequad = { data()->at(cset())->width * frame,
-			    offset,
-			    data()->at(cset())->height,
-			    data()->at(cset())->width };
-    SDL_Rect destquad = { x, y,
-			  data()->at(cset())->height,
-			  data()->at(cset())->width };
-    render(&destquad, &sourcequad);
-    if (iter >= speed) {
-      if (cframe() < data()->at(cset())->frames - 1)
-	setframe(frame + 1);
-      else
-	setframe(0);
-      iter = 0;
-    }
-    else
-      iter += 1;
-    
-    //englogger->warn("{}, {}, {}, {}", frame, animation, speed, iter);
-}
-
-void spritesheet::renderframe(int x, int y, double angle,
-			      SDL_Point *center, SDL_RendererFlip flip) {
-  int i = 0;
-  int offset = 0;
-  for (i = 0; i < set; i++)
-    offset += framedata->at(i)->height;
-  SDL_Rect sourcequad = { setstruct->width * frame, offset,
-			  setstruct->width, setstruct->height };
-  SDL_Rect destquad = { x, y,
-			setstruct->width, setstruct->height };
-  render(&destquad, &sourcequad);
-}
-
-void spritesheet::renderframe(SDL_Rect *dest, double angle,
-			      SDL_Point *center, SDL_RendererFlip flip) {
-  int i = 0;
-  int offset = 0;
-  for (i = 0; i < set; i++)
-    offset += framedata->at(i)->height;
-  SDL_Rect sourcequad = { setstruct->width * frame, offset,
-			  setstruct->width, setstruct->height };
-  render(dest, &sourcequad);
-}
-
-void spritesheet::renderframe(int row, int col, SDL_Rect *dest, double angle, SDL_Point *center,
+void spritesheet::rendersprite(uint8_t row, uint8_t col, SDL_Rect *dest, double angle, SDL_Point *center,
 			      SDL_RendererFlip flip) {
-  int i = 0;
-  int offset = 0;
-  for (i = 0; i < row; i++)
-    offset += framedata->at(i)->height;
-  SDL_Rect sourcequad = { setstruct->width * col, offset,
-			  setstruct->width, setstruct->height };
-  render(dest, &sourcequad);
+  SDL_Rect sourcequad = { data()[row].x + data()[row].width * col, data()[row].y,
+			  data()[row].width, data()[row].height };
+  render(dest, &sourcequad, angle, center, flip);
 }
 
-void spritesheet::renderframe(int row, int col, int x, int y, double angle, SDL_Point *center,
+void spritesheet::rendersprite(uint8_t row, uint8_t col, int x, int y, double angle, SDL_Point *center,
 			      SDL_RendererFlip flip) {
   SDL_Rect destquad = { x, y,
-			  setstruct->width, setstruct->height };
-  renderframe(row, col, &destquad, angle, center, flip);
-}
-
-void animationsheet::renderframe(SDL_Rect *dest,
-				 double angle, SDL_Point *center, SDL_RendererFlip flip) {
-    int i = 0;
-    int offset = 0;
-    if (cset())
-      for (i = 0; i < cset(); i++)
-	offset += data()->at(i)->height;
-    SDL_Rect sourcequad = { data()->at(cset())->width * frame,
-			    offset,
-			    data()->at(cset())->height,
-			    data()->at(cset())->width };
-    render(dest, &sourcequad);
-    if (iter >= speed) {
-      if (cframe() < data()->at(cset())->frames - 1)
-	setframe(frame + 1);
-      else
-	setframe(0);
-      iter = 0;
-    }
-    else
-      iter += 1;
-    
-    //englogger->warn("{}, {}, {}, {}", frame, animation, speed, iter);
+			data()[row].width, data()[row].height };
+  rendersprite(row, col, &destquad, angle, center, flip);
 }
 
 spritesheet::~spritesheet() {
-  for (int i = 0; i < framedata->size(); i++)
-    delete framedata->at(i);
   delete framedata;
 }
 
@@ -441,8 +381,8 @@ spritesheet::~spritesheet() {
 // 			 const std::string filename): img(renderer, filename) {}
 
 font::font(SDL_Renderer *renderer,
-	   const std::string filename,
-	   std::vector<struct anirow *> *data) : spritesheet(renderer, filename, data) {
+	   const char filename[], struct anirow *data,
+	   uint8_t size) : spritesheet(renderer, filename, data, size) {
   // std::vector<struct anirow *> *newdata = new std::vector<struct anirow *>;
   // newdata->push_back(new anirow(9, 16, 96));
   // setdata(newdata);
@@ -452,21 +392,23 @@ font::font(SDL_Renderer *renderer,
 void font::renderchar(SDL_Rect *dest, char cchar, double angle,
 		      SDL_Point *center, SDL_RendererFlip flip) {
   //                                                       PLACEHOLDER Y
-  SDL_Rect sourcequad = { setstruct->width * (cchar - 32), 0,
-			  setstruct->width, setstruct->height };
+  SDL_Rect sourcequad = { framedata->width * (cchar - 32), 0,
+			  framedata->width, framedata->height };
   render(dest, &sourcequad);
 }
 
 void font::renderchar(int x, int y, char cchar, double angle,
 		      SDL_Point *center, SDL_RendererFlip flip) {
-  SDL_Rect sourcequad = { setstruct->width * (cchar - 32), 0,
-			  setstruct->width, setstruct->height };
+  SDL_Rect sourcequad = { framedata->width * (cchar - 32), 0,
+			  framedata->width, framedata->height };
   SDL_Rect destquad = { x, y,
-			setstruct->width, setstruct->height };
+			framedata->width, framedata->height };
   render(&destquad, &sourcequad);
 }
 
 int font::rendertext(int x, int y, const char *str) {
+  if (!str)
+    return 0;
   char c;
   int i = 0;
   //  int offset = 0;
@@ -475,7 +417,7 @@ int font::rendertext(int x, int y, const char *str) {
     //SDL_Rect dest = { };
     i++;
     if (c >= 32 && c <= 127) {
-      renderchar(x + (rendered * currentdata()->width), y, c);
+      renderchar(x + (rendered * framedata->width), y, c);
       rendered++;
     }
   }

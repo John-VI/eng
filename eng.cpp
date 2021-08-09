@@ -9,6 +9,7 @@
 #include <cmath>
 #include <fstream>
 #include <limits>
+#include <sstream>
 
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
@@ -19,6 +20,36 @@
 // };
 
 auto englogger = spdlog::basic_logger_mt("engine_logger", "enginelog.txt");
+
+struct wordandlength {
+  const char *word;
+  unsigned int length;
+};
+
+std::vector<struct wordandlength *> *split(const char instring[], const char delim) {
+  std::vector<struct wordandlength *> *outvect = new std::vector<struct wordandlength *>;
+  char c = 1;
+  int i = 0;
+  bool t = true;
+  while (c) {
+    c = instring[i];
+    if (c == delim)
+      t = true;
+    else if (t && c != delim) {
+      struct wordandlength *newword = new struct wordandlength;
+      newword->word = instring + i;
+      while (instring[++i] != delim && instring[i] != NULL);
+      --i;
+      newword->length = i - (newword->word - instring);
+      outvect->push_back(newword);
+      t = false;
+    } else {
+      t = false;
+    }
+    ++i;
+  }
+  return outvect;
+}
 
 SDL_Surface *loadmedia(const char filename[]) {
   SDL_Surface *img = NULL;
@@ -389,24 +420,36 @@ font::font(SDL_Renderer *renderer,
   defaultcolor = { 255, 255, 255, 255 };
 }
 
-void font::renderchar(SDL_Rect *dest, char cchar, double angle,
+void font::resetcolor() {
+  //color = newcolor;
+  setcolor(defaultcolor.r, defaultcolor.g, defaultcolor.b);
+}
+
+void font::renderchar(SDL_Rect *dest, char cchar, SDL_Color *color, double angle,
 		      SDL_Point *center, SDL_RendererFlip flip) {
   //                                                       PLACEHOLDER Y
   SDL_Rect sourcequad = { framedata->width * (cchar - 32), 0,
 			  framedata->width, framedata->height };
-  render(dest, &sourcequad);
+  if (color) {
+    setcolor(color);
+    render(dest, &sourcequad);
+    resetcolor();
+  } else {
+    render(dest, &sourcequad);
+  }
 }
 
-void font::renderchar(int x, int y, char cchar, double angle,
+void font::renderchar(int x, int y, char cchar, SDL_Color *color, double angle,
 		      SDL_Point *center, SDL_RendererFlip flip) {
-  SDL_Rect sourcequad = { framedata->width * (cchar - 32), 0,
-			  framedata->width, framedata->height };
+  // SDL_Rect sourcequad = { framedata->width * (cchar - 32), 0,
+  // 			  framedata->width, framedata->height };
   SDL_Rect destquad = { x, y,
 			framedata->width, framedata->height };
-  render(&destquad, &sourcequad);
+  renderchar(&destquad, cchar, color, angle, center, flip);
+  // render(&destquad, &sourcequad);
 }
 
-int font::rendertext(int x, int y, const char *str) {
+int font::rendertext(int x, int y, const char *str, SDL_Color *color) {
   if (!str)
     return 0;
   char c;
@@ -417,18 +460,190 @@ int font::rendertext(int x, int y, const char *str) {
     //SDL_Rect dest = { };
     i++;
     if (c >= 32 && c <= 127) {
-      renderchar(x + (rendered * framedata->width), y, c);
+      renderchar(x + (rendered * framedata->width), y, c, color);
       rendered++;
     }
   }
   return rendered;
 }
 
-int font::rendertext(int x, int y, const char *str, int r, int g, int b) {
-  setcolor(r, g, b);
-  int tmp = rendertext(x, y, str);
-  setcolor(255, 255, 255);
-  return tmp;
+int font::rendertext(int x, int y, const char *str, char delim, unsigned int max, SDL_Color *color) {
+  if (!str)
+    return 0;
+  char c;
+  int i = 0;
+  //  int offset = 0;
+  int rendered = 0;
+  while ((c = str[i]) > 0 && c != delim && i < max) {
+    //SDL_Rect dest = { };
+    i++;
+    if (c >= 32 && c <= 127) {
+      renderchar(x + (rendered * framedata->width), y, c, color);
+      rendered++;
+    }
+  }
+  return i;
+}
+
+int font::renderwrappedtext(SDL_Rect *dest, const char *str, SDL_Color *color) {
+  int maxwidth = dest->w/framedata->width;
+  int maxlines = dest->h/framedata->height;
+  int remspace = maxwidth;
+  int voffset  = 0;
+  std::vector<struct wordandlength *> *splitstr = split(str, ' ');
+  int i = 0;
+  unsigned int resume = 0;
+
+  // while (++i < splitstr->size() && voffset < maxlines) {
+  //   if (splitstr->at(i)->length > maxwidth && remspace == maxwidth) {
+  //     int j = 0;
+  //     do {
+  // 	if (voffset < maxlines) 
+  // 	  ++voffset;
+  // 	else
+  // 	  break;
+  //     } while ((j += rendertext(dest->x, dest->y + (voffset - 1) * framedata->height,
+  // 				splitstr->at(i)->word, ' ', maxwidth, color))
+  // 	       < splitstr->at(i)->length);
+  //     remspace = j % maxwidth;
+  //   } else if (splitstr->at(i)->length <= remspace && remspace == maxwidth) {
+  //    rendertext(dest->x, dest->y + voffset * framedata->height, splitstr->at(i)->word, ' ', maxwidth,
+  // 		 color);
+  //     remspace -= splitstr->at(i)->length;
+  //   } else if (splitstr->at(i)->length < remspace) {
+  //     renderchar(dest->x + (maxwidth - remspace) * framedata->width,
+  // 		 dest->y + voffset * framedata->height, ' ', color);
+  //     remspace -= rendertext(dest->x + (maxwidth - remspace + 1) * framedata->width,
+  // 			     dest->y + voffset * framedata->height, splitstr->at(i)->word, ' ',
+  // 			     remspace, color) + 1;
+  //   } else {
+  //     if (voffset < maxlines) 
+  // 	++voffset;
+  //     else
+  // 	break;
+  //   }
+  // }
+
+  for (i=0;i<splitstr->size();++i) {
+    if (splitstr->at(i)->length == remspace) {
+      remspace -= rendertext(dest->x + (maxwidth - remspace) * framedata->width,
+			     dest->y + voffset * framedata->height, splitstr->at(i)->word, ' ',
+			     maxwidth, color);
+    } else if (splitstr->at(i)->length < remspace) {
+      remspace -= rendertext(dest->x + (maxwidth - remspace) * framedata->width,
+			     dest->y + voffset * framedata->height, splitstr->at(i)->word, ' ',
+			     maxwidth, color) + 1;
+      renderchar(dest->x + (maxwidth - remspace) * framedata->width,
+		 dest->y + voffset * framedata->height, ' ', color);
+    } else if (splitstr->at(i)->length > maxwidth) {
+      while (remspace > 0) {
+	englogger->debug("Entering loop2, {}, {}", resume, remspace);
+	renderchar(dest->x + (maxwidth - remspace) * framedata->width,
+		   dest->y + voffset * framedata->height, splitstr->at(i)->word[resume], color);
+	--remspace;
+	if (++resume >= splitstr->at(i)->length) {
+	  renderchar(dest->x + (maxwidth - (--remspace)) * framedata->width,
+		     dest->y + voffset * framedata->height, ' ', color);
+	  break;
+	}
+      }
+      if (resume >= splitstr->at(i)->length) 
+	resume = 0;
+      else
+	--i;
+    }
+
+    if (remspace <= 0) {
+      if (++voffset > maxlines)
+	break;
+      else
+	remspace = maxwidth;
+    }
+  }
+  
+  delete splitstr;
+  return voffset;
+}
+
+int font::renderwrappedtextbroken(SDL_Rect *dest, const char *str, SDL_Color *color) {
+  int maxwidth = dest->w/framedata->width;
+  int maxlines = dest->h/framedata->height;
+  int remspace = maxwidth;
+  int voffset  = 0;
+  std::vector<struct wordandlength *> *splitstr = split(str, ' ');
+  unsigned int i = 0;
+  unsigned int resume = 0;
+
+  // while (++i < splitstr->size() && voffset < maxlines) {
+  //   if (splitstr->at(i)->length > maxwidth && remspace == maxwidth) {
+  //     int j = 0;
+  //     do {
+  // 	if (voffset < maxlines) 
+  // 	  ++voffset;
+  // 	else
+  // 	  break;
+  //     } while ((j += rendertext(dest->x, dest->y + (voffset - 1) * framedata->height,
+  // 				splitstr->at(i)->word, ' ', maxwidth, color))
+  // 	       < splitstr->at(i)->length);
+  //     remspace = j % maxwidth;
+  //   } else if (splitstr->at(i)->length <= remspace && remspace == maxwidth) {
+  //    rendertext(dest->x, dest->y + voffset * framedata->height, splitstr->at(i)->word, ' ', maxwidth,
+  // 		 color);
+  //     remspace -= splitstr->at(i)->length;
+  //   } else if (splitstr->at(i)->length < remspace) {
+  //     renderchar(dest->x + (maxwidth - remspace) * framedata->width,
+  // 		 dest->y + voffset * framedata->height, ' ', color);
+  //     remspace -= rendertext(dest->x + (maxwidth - remspace + 1) * framedata->width,
+  // 			     dest->y + voffset * framedata->height, splitstr->at(i)->word, ' ',
+  // 			     remspace, color) + 1;
+  //   } else {
+  //     if (voffset < maxlines) 
+  // 	++voffset;
+  //     else
+  // 	break;
+  //   }
+  // }
+
+  for (i=0;i<splitstr->size();++i) {
+    englogger->debug("Entering loop");
+    if (resume)
+      --i;
+    
+    if (splitstr->at(i)->length == remspace) {
+      remspace -= rendertext(dest->x + (maxwidth - remspace) * framedata->width,
+			     dest->y + voffset * framedata->height, splitstr->at(i)->word, ' ',
+			     maxwidth, color);
+    } else if (splitstr->at(i)->length < remspace) {
+      remspace -= rendertext(dest->x + (maxwidth - remspace) * framedata->width,
+			     dest->y + voffset * framedata->height, splitstr->at(i)->word, ' ',
+			     maxwidth, color) + 1;
+      renderchar(dest->x + (maxwidth - remspace) * framedata->width,
+		 dest->y + voffset * framedata->height, ' ', color);
+    } else if (splitstr->at(i)->length > maxwidth || resume) {
+      for (; remspace > 0; ++resume) {
+	englogger->debug("Entering loop2");
+	renderchar(dest->x + (maxwidth - remspace) * framedata->width,
+		   dest->y + voffset * framedata->height, splitstr->at(i)->word[resume], color);
+	--remspace;
+	if (resume < splitstr->at(i)->length) {
+	  resume = 0;
+	  renderchar(dest->x + (maxwidth - remspace) * framedata->width,
+		     dest->y + voffset * framedata->height, ' ', color);
+	  break;
+	}
+      }
+      if (resume < splitstr->at(i)->length) 
+	resume = 0;
+    }
+
+    if (remspace <= 0) {
+      if (++voffset > maxlines)
+	break;
+    }
+  }
+  
+  delete splitstr;
+  return voffset;
 }
 
 font::~font() {}

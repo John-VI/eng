@@ -25,6 +25,7 @@
 // #define MSGHEIGH 720
 
 auto logger = spdlog::basic_logger_mt("main_logger", "roguelog.txt");
+auto messagelog = spdlog::basic_logger_mt("Messages", "messagelog.txt");
 
 void initlogger() {
   logger->set_level(spdlog::level::debug);
@@ -138,6 +139,8 @@ int main(int argc, char *argv[]) {
   int strint = -10;
   float ftick = 0;
   char *newcstr = NULL;
+  SDL_Color red = { 255, 0, 0, 0 };
+  SDL_Rect wrapzone = { 0, 64, 100, 500 };
 
   if (!initsdl()) {
     win = new renwindow("Parabolus", SCRWIDTH, SCRHEIGH, 0, 0, 0);
@@ -146,7 +149,6 @@ int main(int argc, char *argv[]) {
     worldtiles = new spritesheet(win->getren(), "SpritesheetV1.png", "SpritesheetV1.fd");
     logger->debug("{}, {}, {}, {}, {}", worldtiles->data()->x, worldtiles->data()->y,
 		  worldtiles->data()->width, worldtiles->data()->height, worldtiles->data()->frames);
-
     fieldport = new SDL_Rect;
     fieldport->x = 0;
     fieldport->y = 0;
@@ -210,7 +212,9 @@ int main(int argc, char *argv[]) {
 
       win->setviewport(messgport);
       vga->rendertext(0, 0, "TEST PROGRAM");
-      vga->rendertext(0, 16, "STR", 255, 0, 0);
+      vga->rendertext(0, 16, "STR", &red);
+      vga->renderwrappedtext(&wrapzone,
+      			     "dog poop dog poop aaaaaaaaaaaaaaaaaaaaaaaaaaa EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
       for (int i = 4; i >= 0; i--)
 	if (messages[i])
 	  vga->rendertext(0, 50 + i * 16, messages[i]->c_str());

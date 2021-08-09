@@ -148,28 +148,27 @@ public:
        const char filename[],
        struct anirow *data,
        uint8_t size);
-  void renderchar(SDL_Rect *dest, char cchar, double angle = 0.0, SDL_Point *center = NULL,
+  void renderchar(SDL_Rect *dest, char cchar, SDL_Color *color = NULL,
+		  double angle = 0.0, SDL_Point *center = NULL,
 		  SDL_RendererFlip flip = SDL_FLIP_NONE);
-  void renderchar(int x, int y, char cchar, double angle = 0.0, SDL_Point *center = NULL,
+  void renderchar(int x, int y, char cchar, SDL_Color *color = NULL,
+		  double angle = 0.0, SDL_Point *center = NULL,
 		  SDL_RendererFlip flip = SDL_FLIP_NONE);
-  void renderchar(int x, int y, char cchar, int r, int g, int b, double angle = 0.0,
-		  SDL_Point *center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
-  void renderchar(SDL_Rect *dest, char cchar, int r, int g, int b, double angle = 0.0,
-		  SDL_Point *center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE);
   // void renderchar(int x, int y, SDL_Color color, double angle = 0.0, SDL_Point *center = NULL,
   // 		  SDL_RendererFlip flip = SDL_FLIP_NONE);
   // void renderchar(SDL_Point *center, SDL_Color color, double angle = 0.0, SDL_Point *center = NULL,
   // 		  SDL_RendererFlip flip = SDL_FLIP_NONE);
-  int rendertext(int x, int y, const char *str);
-  int rendertext(int x, int y, const char *str, int r, int g, int b);
-  int rendertext(int x, int y, const char *str, SDL_Color color);
+  int rendertext(int x, int y, const char *str, SDL_Color *color = NULL);
+  int renderwrappedtext(SDL_Rect *dest, const char *str, SDL_Color *color = NULL);
+  int renderwrappedtextbroken(SDL_Rect *dest, const char *str, SDL_Color *color = NULL);//it looked cool
   void setdefaultcolor(int r, int g, int b);
   void setdefaultcolor(SDL_Color newcolor);
   void resetcolor();
   // int rendertext(std::string *str);
   ~font();
-private:
+protected:
   SDL_Color defaultcolor;
+  int rendertext(int x, int y, const char *str, char delim, unsigned int max, SDL_Color *color = NULL);
 };
 
 class renwindow {

@@ -15,8 +15,11 @@
 
 #include "eng.h"
 
-#define SCRWIDTH 1280
-#define SCRHEIGH 720
+#define INTWIDTH 900
+#define INTHEIGH 560
+
+#define SCRWIDTH 1366
+#define SCRHEIGH 768
 
 // #define STGWIDTH 960
 // #define STGHEIGH 720
@@ -132,8 +135,9 @@ int main(int argc, char *argv[]) {
 
   timer *steptimer = NULL;
 
-  SDL_Rect *fieldport = NULL;
-  SDL_Rect *messgport = NULL;
+  SDL_Rect fieldport;
+  SDL_Rect messgport;
+  SDL_Rect mainport;
 
   std::string *messages[5] = { NULL };
   int strint = -10;
@@ -143,23 +147,23 @@ int main(int argc, char *argv[]) {
   SDL_Rect wrapzone = { 0, 64, 100, 500 };
 
   if (!initsdl()) {
-    win = new renwindow("Parabolus", SCRWIDTH, SCRHEIGH, 0, 0, 0);
+    win = new renwindow("Parabolus", SCRWIDTH, SCRHEIGH, INTWIDTH, INTHEIGH, 0, 0, 0);
+    SDL_RenderSetLogicalSize(win->getren(), INTWIDTH, INTHEIGH);
     fdat = new struct anirow(0, 0, 9, 16, 96);
     vga = new font(win->getren(), "font.gif", fdat, (uint8_t)1);
     worldtiles = new spritesheet(win->getren(), "SpritesheetV1.png", "SpritesheetV1.fd");
-    logger->debug("{}, {}, {}, {}, {}", worldtiles->data()->x, worldtiles->data()->y,
-		  worldtiles->data()->width, worldtiles->data()->height, worldtiles->data()->frames);
-    fieldport = new SDL_Rect;
-    fieldport->x = 0;
-    fieldport->y = 0;
-    fieldport->w = SCRHEIGH/3 * 4;
-    fieldport->h = SCRHEIGH;
 
-    messgport = new SDL_Rect;
-    messgport->x = fieldport->w;
-    messgport->y = 0;
-    messgport->w = SCRWIDTH - fieldport->w;
-    messgport->h = SCRHEIGH;
+    SDL_RenderGetViewport(win->getren(), &mainport);
+
+    fieldport.x = mainport.x;
+    fieldport.y = mainport.y;
+    fieldport.w = mainport.w/3 * 2;
+    fieldport.h = mainport.h;
+
+    messgport.x = mainport.x + fieldport.w;
+    messgport.y = mainport.y;
+    messgport.w = mainport.w - fieldport.w;
+    messgport.h = mainport.h;
 
     background = new loopingbg(win->getren(), "Background.png", 0, 0);
 
@@ -195,7 +199,7 @@ int main(int argc, char *argv[]) {
       steptimer->start();
 
       win->renclear();
-      win->setviewport(fieldport);
+      win->setviewport(&fieldport);
       background->renderbg();
       worldtiles->rendersprite(0, 0, 0, 16);
       worldtiles->rendersprite(0, 0, 0, 32);
@@ -210,8 +214,8 @@ int main(int argc, char *argv[]) {
       worldtiles->rendersprite(0, 3, 32, 64);
       worldtiles->rendersprite(0, 3, 48, 64);
 
-      win->setviewport(messgport);
-      vga->rendertext(0, 0, "TEST PROGRAM");
+      win->setviewport(&messgport);
+      vga->rendertext(0, 0, "TEST PROGRAMMMMMMMMMMMMMMMMMMM");
       vga->rendertext(0, 16, "STR", &red);
       vga->renderwrappedtext(&wrapzone,
       			     "dog poop dog poop aaaaaaaaaaaaaaaaaaaaaaaaaaa EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
@@ -225,8 +229,6 @@ int main(int argc, char *argv[]) {
   delete[] newcstr;
   delete steptimer;
   delete background;
-  delete fieldport;
-  delete messgport;
   delete worldtiles;
   delete win;
   delete vga;

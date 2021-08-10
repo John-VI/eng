@@ -309,7 +309,6 @@ int spritesheet::loaddatafile(const char filename[]) {
   length = F.gcount() - 1;
   F.clear();
   F.seekg(1, std::ios_base::beg);
-  englogger->debug("Length: {}, cells: {}", length, cells);
   
   if (cells * 9 >= length) {
     newdata = new struct anirow[buffer[0]];
@@ -537,7 +536,6 @@ int font::renderwrappedtext(SDL_Rect *dest, const char *str, SDL_Color *color) {
 		 dest->y + voffset * framedata->height, ' ', color);
     } else if (splitstr->at(i)->length > maxwidth) {
       while (remspace > 0) {
-	englogger->debug("Entering loop2, {}, {}", resume, remspace);
 	renderchar(dest->x + (maxwidth - remspace) * framedata->width,
 		   dest->y + voffset * framedata->height, splitstr->at(i)->word[resume], color);
 	--remspace;
@@ -605,7 +603,6 @@ int font::renderwrappedtextbroken(SDL_Rect *dest, const char *str, SDL_Color *co
   // }
 
   for (i=0;i<splitstr->size();++i) {
-    englogger->debug("Entering loop");
     if (resume)
       --i;
     
@@ -621,7 +618,6 @@ int font::renderwrappedtextbroken(SDL_Rect *dest, const char *str, SDL_Color *co
 		 dest->y + voffset * framedata->height, ' ', color);
     } else if (splitstr->at(i)->length > maxwidth || resume) {
       for (; remspace > 0; ++resume) {
-	englogger->debug("Entering loop2");
 	renderchar(dest->x + (maxwidth - remspace) * framedata->width,
 		   dest->y + voffset * framedata->height, splitstr->at(i)->word[resume], color);
 	--remspace;
@@ -650,19 +646,21 @@ font::~font() {}
 
 /* ====== renwindow ====== */
 
-renwindow::renwindow(const std::string name, int width,
-		     int height, Uint8 red,
-		     Uint8 green, Uint8 blue,
+renwindow::renwindow(const std::string name, int rwidth,
+		     int rheight, int iwidth, int iheight,
+		     Uint8 red, Uint8 green, Uint8 blue,
 		     Uint8 alpha) {
-  window = newwin(name, width, height);
+  window = newwin(name, rwidth, rheight);
   rencolor.r = red;
   rencolor.g = green;
   rencolor.b = blue;
   rencolor.a = alpha;
   ren = newren(window, red, green, blue, alpha);
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, 0);
-  w = width;
-  h = height;
+  SDL_RenderSetLogicalSize(ren, iwidth, iheight);
+  SDL_RenderSetIntegerScale(ren, SDL_TRUE);
+  w = iwidth;
+  h = iheight;
 }
 
 renwindow::renwindow(const std::string name, int width,
@@ -694,6 +692,14 @@ int renwindow::getwidth() {
 
 int renwindow::getheight() {
   return h;
+}
+
+int renwindow::getrealwidth() {
+  return rw;
+}
+
+int renwindow::getrealheight() {
+  return rh;
 }
 
 void renwindow::renclear() {

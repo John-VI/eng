@@ -173,10 +173,10 @@ protected:
 
 class renwindow {
 public:
-  renwindow(const std::string name, int width,
-	     int height, Uint8 red = 0xFF,
-	     Uint8 green = 0xFF, Uint8 blue = 0xFF,
-	     Uint8 alpha = 0xFF);
+  renwindow(const std::string name, int rwidth,
+	    int rheight, int iwidth, int iheight, Uint8 red = 0xFF,
+	    Uint8 green = 0xFF, Uint8 blue = 0xFF,
+	    Uint8 alpha = 0xFF);
   renwindow(const std::string name, int width,
 	    int height, SDL_Color color);
   ~renwindow();
@@ -184,6 +184,8 @@ public:
   SDL_Renderer *getren();
   int getwidth();
   int getheight();
+  int getrealwidth();
+  int getrealheight();
   void renclear();
   void renupdate();
   int setviewport(const SDL_Rect *port);
@@ -195,6 +197,8 @@ protected:
   SDL_Renderer *ren;
   int w;
   int h;
+  int rw;
+  int rh;
   SDL_Color rencolor;
 };
 

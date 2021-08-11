@@ -484,6 +484,44 @@ int font::rendertext(int x, int y, const char *str, char delim, unsigned int max
   return i;
 }
 
+int font::rendercappedtext(int x, int y, int max, const char *str, SDL_Color *color) {
+  if (!str)
+    return 0;
+  
+  char c;
+  int i = 0;
+  //  int offset = 0;
+  int rendered = 0;
+  int renderable = 0;
+  int exceeds = 0;
+  
+  while ((c = str[i]) > 0) {
+    //SDL_Rect dest = { };
+    i++;
+    if (c >= 32 && c <= 127) 
+      renderable++;
+  }
+
+  if (renderable > max) {
+    exceeds = 1;
+  }
+
+  i = 0;
+  
+  while ((c = str[i]) > 0) {
+    i++;
+    if (c >= 32 && c <= 127) {
+      renderchar(x + (rendered * framedata->width), y, c, color);
+      rendered++;
+    }
+    if (rendered == (max - 3) && exceeds) {
+      rendered += rendertext(x + (rendered * framedata->width), y, "...", color);
+      break;
+    }
+  }
+  return rendered;
+}
+
 int font::renderwrappedtext(SDL_Rect *dest, const char *str, SDL_Color *color) {
   int maxwidth = dest->w/framedata->width;
   int maxlines = dest->h/framedata->height;
@@ -549,12 +587,16 @@ int font::renderwrappedtext(SDL_Rect *dest, const char *str, SDL_Color *color) {
 	resume = 0;
       else
 	--i;
+    } else if (splitstr->at(i)->length > remspace) {
+      i--;
+      remspace = 0;
     }
 
     if (remspace <= 0) {
-      if (++voffset > maxlines)
+      if (++voffset > maxlines) {
+	voffset--;
 	break;
-      else
+      } else
 	remspace = maxwidth;
     }
   }

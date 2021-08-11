@@ -136,8 +136,9 @@ int main(int argc, char *argv[]) {
   timer *steptimer = NULL;
 
   SDL_Rect fieldport;
-  SDL_Rect messgport;
+  SDL_Rect statusport;
   SDL_Rect mainport;
+  SDL_Rect messgport;
 
   std::string *messages[5] = { NULL };
   int strint = -10;
@@ -157,13 +158,18 @@ int main(int argc, char *argv[]) {
 
     fieldport.x = mainport.x;
     fieldport.y = mainport.y;
-    fieldport.w = mainport.w/3 * 2;
-    fieldport.h = mainport.h;
+    fieldport.w = mainport.w / 3 * 2;
+    fieldport.h = mainport.h / 4 * 3;
 
-    messgport.x = mainport.x + fieldport.w;
-    messgport.y = mainport.y;
-    messgport.w = mainport.w - fieldport.w;
-    messgport.h = mainport.h;
+    statusport.x = mainport.x + fieldport.w;
+    statusport.y = mainport.y;
+    statusport.w = mainport.w - fieldport.w;
+    statusport.h = mainport.h;
+
+    messgport.x = mainport.x;
+    messgport.y = mainport.y + fieldport.h;
+    messgport.w = fieldport.w;
+    messgport.h = mainport.h / 4;
 
     background = new loopingbg(win->getren(), "Background.png", 0, 0);
 
@@ -214,11 +220,14 @@ int main(int argc, char *argv[]) {
       worldtiles->rendersprite(0, 3, 32, 64);
       worldtiles->rendersprite(0, 3, 48, 64);
 
+      win->setviewport(&statusport);
+      vga->rendertext(0, 0, "Renders in statusport");
+
       win->setviewport(&messgport);
-      vga->rendertext(0, 0, "TEST PROGRAMMMMMMMMMMMMMMMMMMM");
-      vga->rendertext(0, 16, "STR", &red);
-      vga->renderwrappedtext(&wrapzone,
-      			     "dog poop dog poop aaaaaaaaaaaaaaaaaaaaaaaaaaa EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
+      vga->rendertext(0, 0, "Renders in messgport");
+      vga->rendercappedtext(0, 16, 5, "Yoooo");
+      vga->rendercappedtext(0, 32, 5, "Yooooo");
+      
       for (int i = 4; i >= 0; i--)
 	if (messages[i])
 	  vga->rendertext(0, 50 + i * 16, messages[i]->c_str());

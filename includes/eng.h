@@ -161,6 +161,7 @@ public:
   int rendertext(int x, int y, const char *str, SDL_Color *color = NULL);
   int renderwrappedtext(SDL_Rect *dest, const char *str, SDL_Color *color = NULL);
   int renderwrappedtextbroken(SDL_Rect *dest, const char *str, SDL_Color *color = NULL);//it looked cool
+  int rendercappedtext(int x, int y, int max, const char *str, SDL_Color *color = NULL);
   void setdefaultcolor(int r, int g, int b);
   void setdefaultcolor(SDL_Color newcolor);
   void resetcolor();
@@ -192,6 +193,7 @@ public:
   void setcolor(SDL_Color newcolor);
   void setcolor(Uint8 r, Uint8 g, Uint8 b, Uint8 a);
   void resetcolor();
+  
 protected:
   SDL_Window *window;
   SDL_Renderer *ren;

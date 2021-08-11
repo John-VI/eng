@@ -21,6 +21,8 @@
 #define SCRWIDTH 1366
 #define SCRHEIGH 768
 
+#define MSGQUEUE 8
+
 // #define STGWIDTH 960
 // #define STGHEIGH 720
 
@@ -140,7 +142,7 @@ int main(int argc, char *argv[]) {
   SDL_Rect mainport;
   SDL_Rect messgport;
 
-  std::string *messages[5] = { NULL };
+  std::string *messages[MSGQUEUE] = { NULL };
   int strint = -10;
   float ftick = 0;
   char *newcstr = NULL;
@@ -198,7 +200,7 @@ int main(int argc, char *argv[]) {
 	// logger->debug("newstr: {}", newstr);
 	// for (int i = 0; i < 10; i++)
 	//   logger->debug("Character {}: {}", i, newstr[i]);
-	pushstack<std::string>(messages, newstr, 5);
+	pushstack<std::string>(messages, newstr, MSGQUEUE);
 	strint++;
       }
       
@@ -224,13 +226,14 @@ int main(int argc, char *argv[]) {
       vga->rendertext(0, 0, "Renders in statusport");
 
       win->setviewport(&messgport);
-      vga->rendertext(0, 0, "Renders in messgport");
-      vga->rendercappedtext(0, 16, 5, "Yoooo");
-      vga->rendercappedtext(0, 32, 5, "Yooooo");
+      background->renderbg();
+      // vga->rendertext(0, 0, "Renders in messgport");
+      // vga->rendercappedtext(0, 16, 5, "Yoooo");
+      // vga->rendercappedtext(0, 32, 5, "Yooooo");
       
-      for (int i = 4; i >= 0; i--)
+      for (int i = MSGQUEUE - 1; i >= 0; i--)
 	if (messages[i])
-	  vga->rendertext(0, 50 + i * 16, messages[i]->c_str());
+	  vga->rendertext(0, i * 16, messages[i]->c_str());
       
       win->renupdate();
     }

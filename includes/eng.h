@@ -8,6 +8,10 @@
 #include <string>
 #include <vector>
 
+//I'm putting the palette enum here because I don't know where else
+enum COLOR { ALPHA, BLACK, WHITE, RED, PURPLE, BLUE, GREEN, YELLOW, ORANGE,
+	     DGRAY, LGRAY, DRED, DPURPLE, DBLUE, DGREEN, DYELLOW, DORANGE, DEFAULT};
+
 class texture {
 public:
   texture(SDL_Renderer *renderer,
@@ -112,6 +116,8 @@ public:
   void rendersprite(uint8_t sprite, uint8_t frame, int x, int y,
 		    double angle = 0.0,  SDL_Point *center = NULL,
 		   SDL_RendererFlip flip = SDL_FLIP_NONE);
+  int getspritewidth(uint8_t row);
+  int getspriteheight(uint8_t row);
   ~spritesheet();
 protected:
   // spritesheet(SDL_Renderer *renderer,

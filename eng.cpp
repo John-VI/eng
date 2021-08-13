@@ -379,6 +379,14 @@ void spritesheet::rendersprite(uint8_t row, uint8_t col, int x, int y, double an
   rendersprite(row, col, &destquad, angle, center, flip);
 }
 
+int spritesheet::getspritewidth(uint8_t row) {
+  return data()[row].width;
+}
+
+int spritesheet::getspriteheight(uint8_t row) {
+  return data()[row].height;
+}
+
 spritesheet::~spritesheet() {
   delete framedata;
 }

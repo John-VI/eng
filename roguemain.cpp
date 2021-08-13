@@ -14,6 +14,7 @@
 #include "spdlog/sinks/basic_file_sink.h"
 
 #include "eng.h"
+#include "messaging.h"
 
 #define INTWIDTH 900
 #define INTHEIGH 560
@@ -142,7 +143,7 @@ int main(int argc, char *argv[]) {
   SDL_Rect mainport;
   SDL_Rect messgport;
 
-  std::string *messages[MSGQUEUE] = { NULL };
+  // std::string *messages[MSGQUEUE] = { NULL };
   int strint = -10;
   float ftick = 0;
   char *newcstr = NULL;
@@ -155,6 +156,7 @@ int main(int argc, char *argv[]) {
     fdat = new struct anirow(0, 0, 9, 16, 96);
     vga = new font(win->getren(), "font.gif", fdat, (uint8_t)1);
     worldtiles = new spritesheet(win->getren(), "SpritesheetV1.png", "SpritesheetV1.fd");
+    messager messages(win->getren(), messagelog, 8, vga, NULL, DDEBUG);
 
     SDL_RenderGetViewport(win->getren(), &mainport);
 
@@ -168,8 +170,8 @@ int main(int argc, char *argv[]) {
     statusport.w = mainport.w - fieldport.w;
     statusport.h = mainport.h;
 
-    messgport.x = mainport.x;
-    messgport.y = mainport.y + fieldport.h;
+    messgport.x = 0;
+    messgport.y = fieldport.h;
     messgport.w = fieldport.w;
     messgport.h = mainport.h / 4;
 
@@ -195,13 +197,14 @@ int main(int argc, char *argv[]) {
  
       if ((ftick += ticks) >= .2f) {
 	ftick -= .2f;
-	snprintf(newcstr, 500, "%d", strint);
-	std::string *newstr = new std::string(newcstr);
-	// logger->debug("newstr: {}", newstr);
-	// for (int i = 0; i < 10; i++)
-	//   logger->debug("Character {}: {}", i, newstr[i]);
-	pushstack<std::string>(messages, newstr, MSGQUEUE);
-	strint++;
+	// snprintf(newcstr, 500, "%d", strint);
+	// std::string *newstr = new std::string(newcstr);
+	// // logger->debug("newstr: {}", newstr);
+	// // for (int i = 0; i < 10; i++)
+	// //   logger->debug("Character {}: {}", i, newstr[i]);
+	// pushstack<std::string>(messages, newstr, MSGQUEUE);
+	// strint++;
+	messages.send("Message!");
       }
       
       steptimer->start();
@@ -225,16 +228,15 @@ int main(int argc, char *argv[]) {
       win->setviewport(&statusport);
       vga->rendertext(0, 0, "Renders in statusport");
 
-      win->setviewport(&messgport);
-      background->renderbg();
+      win->setviewport(&mainport);
       // vga->rendertext(0, 0, "Renders in messgport");
       // vga->rendercappedtext(0, 16, 5, "Yoooo");
       // vga->rendercappedtext(0, 32, 5, "Yooooo");
       
-      for (int i = MSGQUEUE - 1; i >= 0; i--)
-	if (messages[i])
-	  vga->rendertext(0, i * 16, messages[i]->c_str());
-      
+      // for (int i = MSGQUEUE - 1; i >= 0; i--)
+      // 	if (messages[i])
+      // 	  vga->rendertext(0, i * 16, messages[i]->c_str());
+      messages.rendercappedmessages(0, &messgport);
       win->renupdate();
     }
   }

@@ -1,9 +1,9 @@
 IDIR=includes
 CXX=g++
 CXXFLAGS=-I$(IDIR) -ggdb -Wall -pedantic -fdiagnostics-color=always -Dmain=SDL_main -std=gnu++20 
-LIBS=-LC:/msys64/mingw64/lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -mwindows -lpthread statlibs/libspdlog.a -static-libgcc -static-libstdc++
-DEPS=eng.h
-OBJ=eng.o
+LIBS=-LC:/msys64/mingw64/lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -mwindows -lpthread statlibs/libspdlog.a
+DEPS=eng.h messaging.h
+OBJ=eng.o messaging.o
 
 %.o: %.c $(DEPS)
 	$(CXX) -c -o $@ $< $(CXXFLAGS) 

@@ -78,22 +78,29 @@ void messager::send(const char *message, MSGLEVEL level, COLOR altcolor) {
   pushstack<struct message>(queue, newmessage, queuesize);
 }
 
+void messager::send(struct message *message) {
+  pushstack<struct message>(queue, message, queuesize);
+}
+
 void messager::rendercappedmessages(unsigned int from, SDL_Rect *box) {
   int maxlines = box->h / face->getspriteheight(0);
   int maxwidth = box->w / face->getspritewidth(0);
   SDL_Color *col = NULL;
 
   for (int i = 0; i < maxlines && i < queuesize; i++) {
-    // if (queue[i]->altcolor == DEFAULT)
-    //   col = &palette[index[queue[i]->level]];
-    // else
-    //   col = &palette[queue[i]->altcolor];
-    // Right now I don't feel like setting up a palette so, default color
+    if (queue[i]->altcolor == DEFAULT)
+      col = &palette[index[queue[i]->level]];
+    else
+      col = &palette[queue[i]->altcolor];
     
     face->rendercappedtext(box->x, box->y + box->h - face->getspriteheight(0) - i *
 			   face->getspriteheight(0), maxwidth,
 			   queue[i]->msgtext);
   }
+}
+
+void messager::setlevelcolor(MSGLEVEL level, COLOR color) {
+  index[level] = color;
 }
 
 messager::~messager() {

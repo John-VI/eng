@@ -156,7 +156,6 @@ int main(int argc, char *argv[]) {
     fdat = new struct anirow(0, 0, 9, 16, 96);
     vga = new font(win->getren(), "font.gif", fdat, (uint8_t)1);
     worldtiles = new spritesheet(win->getren(), "SpritesheetV1.png", "SpritesheetV1.fd");
-    messager messages(win->getren(), messagelog, 8, vga, NULL, DDEBUG);
 
     SDL_RenderGetViewport(win->getren(), &mainport);
 
@@ -180,6 +179,27 @@ int main(int argc, char *argv[]) {
     steptimer = new timer();
 
     newcstr = new char[500];
+
+    SDL_Color palette[DEFAULT];
+    palette[ALPHA]   = { 0, 0, 0, 0 };
+    palette[BLACK]   = { 0, 0, 0, 255 };
+    palette[WHITE]   = { 255, 255, 255, 255 };
+    palette[RED]     = { 255, 0, 0, 255};
+    palette[PURPLE]  = { 255, 0, 255, 255 };
+    palette[BLUE]    = { 0, 0, 255, 255 };
+    palette[GREEN]   = { 0, 255, 0, 255 };
+    palette[YELLOW]  = { 255, 255, 0, 255 };
+    palette[ORANGE]  = { 255, 0x67, 0, 255 };
+    palette[DGRAY]   = { 55, 55, 55, 255 };
+    palette[LGRAY]   = { 155, 155, 155, 255 };
+    palette[DRED]    = { 125, 0, 0, 255 };
+    palette[DPURPLE] = { 125, 0, 125, 255 };
+    palette[DBLUE]   = { 0, 0, 125, 255 };
+    palette[DGREEN]  = { 0, 125, 0, 255 };
+    palette[DYELLOW] = { 125, 125, 0, 255 };
+    palette[DORANGE] = { 125, 0x37, 0, 255 };
+
+    messager messages(win->getren(), messagelog, 8, vga, palette, DDEBUG);
 
     while (quit != 1) {
       while (SDL_PollEvent(&e) != 0) {

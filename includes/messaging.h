@@ -28,7 +28,7 @@ public:
   messager(SDL_Renderer *renderer, std::shared_ptr<spdlog::logger> log, unsigned int size, 
 	   font *fontface, SDL_Color *colorpalette, MSGLEVEL mesglevel = MESSAGE);
   void send(const char *message, MSGLEVEL level = MESSAGE, COLOR altcolor = DEFAULT);
-  void send(struct message message);
+  void send(struct message *message);
   void rendercappedmessages(unsigned int from, SDL_Rect *box);
   void setlevelcolor(MSGLEVEL level, COLOR color);
   uint16_t flags = 0;
